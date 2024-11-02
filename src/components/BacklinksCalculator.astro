@@ -1,0 +1,76 @@
+<div class="bg-white p-6 rounded-lg shadow-md">
+  <h3 class="text-2xl font-semibold mb-4">Backlinks Calculator - Backlinks Checker - Domain Authority Checker</h3>
+  <p class="mb-4">Analyze the number of backlinks pointing to your domain and get a report of the linking domains.</p>
+  <form id="backlinks-form" class="mb-4">
+    <input type="url" name="url" placeholder="Enter your domain" class="w-full p-2 border rounded mb-2" required>
+    <button type="submit" class="w-full bg-blue-500 text-white p-2 rounded">Calculate Backlinks</button>
+  </form>
+  <div id="backlinks-loading" class="hidden">
+    <p>Loading...</p>
+  </div>
+  <div id="backlinks-result" class="hidden">
+    <h4 class="font-semibold mb-2">Results:</h4>
+    <table class="w-full border-collapse border border-gray-300">
+      <tbody>
+        <tr>
+          <td class="border border-gray-300 p-2 font-semibold">Total Backlinks</td>
+          <td id="total-backlinks" class="border border-gray-300 p-2"></td>
+        </tr>
+        <tr>
+          <td class="border border-gray-300 p-2 font-semibold">Referring Domains</td>
+          <td id="referring-domains" class="border border-gray-300 p-2"></td>
+        </tr>
+        <tr>
+          <td class="border border-gray-300 p-2 font-semibold">Domain Rating</td>
+          <td id="domain-rating" class="border border-gray-300 p-2"></td>
+        </tr>
+        <tr>
+          <td class="border border-gray-300 p-2 font-semibold">URL Rating</td>
+          <td id="url-rating" class="border border-gray-300 p-2"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div id="backlinks-error" class="hidden text-red-500 mt-2"></div>
+</div>
+
+<script>
+  const backlinksForm = document.getElementById('backlinks-form');
+  const backlinksLoading = document.getElementById('backlinks-loading');
+  const backlinksResult = document.getElementById('backlinks-result');
+  const backlinksError = document.getElementById('backlinks-error');
+
+  backlinksForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const url = new FormData(e.target).get('url');
+    
+    backlinksError.classList.add('hidden');
+    backlinksResult.classList.add('hidden');
+    backlinksLoading.classList.remove('hidden');
+
+    try {
+      const response = await fetch('/api/backlinks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+
+      document.getElementById('total-backlinks').textContent = data.overview.backlinks.toLocaleString();
+      document.getElementById('referring-domains').textContent = data.overview.refdomains.toLocaleString();
+      document.getElementById('domain-rating').textContent = data.overview.domainRating.toFixed(1);
+      document.getElementById('url-rating').textContent = data.overview.urlRating.toFixed(1);
+      
+      backlinksResult.classList.remove('hidden');
+    } catch (error) {
+      backlinksError.textContent = `Error: ${error.message}`;
+      backlinksError.classList.remove('hidden');
+    } finally {
+      backlinksLoading.classList.add('hidden');
+    }
+  });
+</script>
